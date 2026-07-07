@@ -2,13 +2,11 @@ name: Check Portasplit stock
 
 on:
   schedule:
-    # Toutes les 10 minutes. GitHub peut retarder l'exécution de quelques
-    # minutes en cas de forte charge sur ses runners, c'est normal.
     - cron: "*/10 * * * *"
-  workflow_dispatch: {}   # permet de lancer manuellement depuis l'onglet Actions
+  workflow_dispatch: {}
 
 permissions:
-  contents: write   # nécessaire pour committer state.json
+  contents: write
 
 jobs:
   check-stock:
@@ -41,5 +39,5 @@ jobs:
           git config user.name "stock-bot"
           git config user.email "stock-bot@users.noreply.github.com"
           git add state.json
-          git diff --quiet --cached || git commit -m "chore: update stock state [skip ci]"
+          git diff --quiet --cached || git commit -m "chore: update stock state"
           git push
