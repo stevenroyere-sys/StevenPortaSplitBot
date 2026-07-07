@@ -29,94 +29,44 @@ PRODUCTS = [
         "key": "portasplit_manomano",
         "product": "Portasplit",
         "site": "ManoMano",
-        "url": "https://TODO-url-fiche-produit-manomano",
+        "url": "https://www.manomano.fr/p/midea-climatiseur-split-mobile-reversible-froid-chaud-3500w12000btu-wifi-deshumidificateur-ventilateur-jusqua-40m2-kit-fenetre-inclus-83810402",
     },
     {
         "key": "portasplit_castorama",
         "product": "Portasplit",
         "site": "Castorama",
-        "url": "https://TODO-url-fiche-produit-castorama",
-    },
-    {
-        "key": "portasplit_bricorama",
-        "product": "Portasplit",
-        "site": "Bricorama",
-        "url": "https://TODO-url-fiche-produit-bricorama",
+        "url": "https://www.castorama.fr/climatiseur-portasplit-midea-reversible-3500w/8431312260509_CAFR.prd",
     },
     {
         "key": "portasplit_leroymerlin",
         "product": "Portasplit",
         "site": "Leroy Merlin",
-        "url": "https://TODO-url-fiche-produit-leroy-merlin",
+        "url": "https://www.leroymerlin.fr/produits/climatiseur-split-mobile-reversible-portasplit-midea-par-optimea-93857579.html",
     },
     {
         "key": "portasplit_joybuy",
         "product": "Portasplit",
         "site": "Joybuy",
-        "url": "https://TODO-url-fiche-produit-joybuy",
-    },
-    {
-        "key": "portasplit_cdiscount",
-        "product": "Portasplit",
-        "site": "Cdiscount",
-        "url": "https://TODO-url-fiche-produit-cdiscount",
+        "url": "https://www.joybuy.fr/dp/midea-portasplit-climatiseur-réversible-froidchaud-35kw/100003175005531",
     },
     {
         "key": "portasplit_rakuten",
         "product": "Portasplit",
         "site": "Rakuten",
-        "url": "https://TODO-url-fiche-produit-rakuten",
+        "url": "https://fr.shopping.rakuten.com/offer/buy/13466164647/clim-reversible-optimea-mmcs-12hrn8-qrd0.html",
     },
     {
         "key": "portasplit_fnac",
         "product": "Portasplit",
         "site": "Fnac",
-        "url": "https://TODO-url-fiche-produit-fnac",
+        "url": "https://www.fnac.com/MIDEA-Climatiseur-Split-Mobile-Reversible-Froid-Chaud-3500W-12000BTU-WiFi-deshumidificateur-ventilateur-jusqu-a-40m2-kit-fenetre-inclus/a21457105/w-4",
     },
     {
         "key": "portasplit_auchan",
         "product": "Portasplit",
         "site": "Auchan",
-        "url": "https://TODO-url-fiche-produit-auchan",
+        "url": "https://www.auchan.fr/optimea-clim-reversible-midea-climatiseur-split-mobile/pr-10b80596-1b4d-4ebb-aeba-ad08f0943013",
     },
-    # ---- Portasplit Cool : dupliquer le même modèle pour chaque marchand ----
-    {
-        "key": "portasplit_cool_boulanger",
-        "product": "Portasplit Cool",
-        "site": "Boulanger",
-        "url": "https://TODO-url-fiche-produit-boulanger-cool",
-    },
-    {
-        "key": "portasplit_cool_darty",
-        "product": "Portasplit Cool",
-        "site": "Darty",
-        "url": "https://TODO-url-fiche-produit-darty-cool",
-    },
-    {
-        "key": "portasplit_cool_manomano",
-        "product": "Portasplit Cool",
-        "site": "ManoMano",
-        "url": "https://TODO-url-fiche-produit-manomano-cool",
-    },
-    {
-        "key": "portasplit_cool_castorama",
-        "product": "Portasplit Cool",
-        "site": "Castorama",
-        "url": "https://TODO-url-fiche-produit-castorama-cool",
-    },
-    {
-        "key": "portasplit_cool_leroymerlin",
-        "product": "Portasplit Cool",
-        "site": "Leroy Merlin",
-        "url": "https://TODO-url-fiche-produit-leroy-merlin-cool",
-    },
-    {
-        "key": "portasplit_cool_fnac",
-        "product": "Portasplit Cool",
-        "site": "Fnac",
-        "url": "https://TODO-url-fiche-produit-fnac-cool",
-    },
-]
 
 # Mots-clés qui indiquent une RUPTURE de stock (en minuscules, sans accents
 # gérés dans le code). Liste volontairement large car chaque site a son
