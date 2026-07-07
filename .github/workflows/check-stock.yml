@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+"""
+Configuration des produits et des sites à surveiller.
+
+IMPORTANT : remplace les URLs marquées "TODO" par l'URL EXACTE de la fiche
+produit (pas une page de recherche/catégorie). Pour la trouver : va sur le
+site du marchand, cherche "Midea PortaSplit" (ou "PortaSplit Cool"), ouvre
+la fiche produit, copie l'URL de la barre d'adresse.
+
+Chaque entrée = un couple (produit, marchand) surveillé indépendamment.
+"""
+
+PRODUCTS = [
+    {
+        "key": "portasplit_boulanger",
+        "product": "Portasplit",
+        "site": "Boulanger",
+        "url": "https://www.boulanger.com/ref/1216685",
+    },
+    {
+        "key": "portasplit_darty",
+        "product": "Portasplit",
+        "site": "Darty",
+        # TODO: URL exacte de la fiche produit Darty (le lien ci-dessous est
+        # une page catégorie Midea, à remplacer par la fiche PortaSplit)
+        "url": "https://www.darty.com/nav/achat/gros_electromenager/climatisation/marque__midea__MDEA.html",
+    },
+    {
+        "key": "portasplit_manomano",
+        "product": "Portasplit",
+        "site": "ManoMano",
+        "url": "https://TODO-url-fiche-produit-manomano",
+    },
+    {
+        "key": "portasplit_castorama",
+        "product": "Portasplit",
+        "site": "Castorama",
+        "url": "https://TODO-url-fiche-produit-castorama",
+    },
+    {
+        "key": "portasplit_bricorama",
+        "product": "Portasplit",
+        "site": "Bricorama",
+        "url": "https://TODO-url-fiche-produit-bricorama",
+    },
+    {
+        "key": "portasplit_leroymerlin",
+        "product": "Portasplit",
+        "site": "Leroy Merlin",
+        "url": "https://TODO-url-fiche-produit-leroy-merlin",
+    },
+    {
+        "key": "portasplit_joybuy",
+        "product": "Portasplit",
+        "site": "Joybuy",
+        "url": "https://TODO-url-fiche-produit-joybuy",
+    },
+    {
+        "key": "portasplit_cdiscount",
+        "product": "Portasplit",
+        "site": "Cdiscount",
+        "url": "https://TODO-url-fiche-produit-cdiscount",
+    },
+    {
+        "key": "portasplit_rakuten",
+        "product": "Portasplit",
+        "site": "Rakuten",
+        "url": "https://TODO-url-fiche-produit-rakuten",
+    },
+    {
+        "key": "portasplit_fnac",
+        "product": "Portasplit",
+        "site": "Fnac",
+        "url": "https://TODO-url-fiche-produit-fnac",
+    },
+    {
+        "key": "portasplit_auchan",
+        "product": "Portasplit",
+        "site": "Auchan",
+        "url": "https://TODO-url-fiche-produit-auchan",
+    },
+    # ---- Portasplit Cool : dupliquer le même modèle pour chaque marchand ----
+    {
+        "key": "portasplit_cool_boulanger",
+        "product": "Portasplit Cool",
+        "site": "Boulanger",
+        "url": "https://TODO-url-fiche-produit-boulanger-cool",
+    },
+    {
+        "key": "portasplit_cool_darty",
+        "product": "Portasplit Cool",
+        "site": "Darty",
+        "url": "https://TODO-url-fiche-produit-darty-cool",
+    },
+    {
+        "key": "portasplit_cool_manomano",
+        "product": "Portasplit Cool",
+        "site": "ManoMano",
+        "url": "https://TODO-url-fiche-produit-manomano-cool",
+    },
+    {
+        "key": "portasplit_cool_castorama",
+        "product": "Portasplit Cool",
+        "site": "Castorama",
+        "url": "https://TODO-url-fiche-produit-castorama-cool",
+    },
+    {
+        "key": "portasplit_cool_leroymerlin",
+        "product": "Portasplit Cool",
+        "site": "Leroy Merlin",
+        "url": "https://TODO-url-fiche-produit-leroy-merlin-cool",
+    },
+    {
+        "key": "portasplit_cool_fnac",
+        "product": "Portasplit Cool",
+        "site": "Fnac",
+        "url": "https://TODO-url-fiche-produit-fnac-cool",
+    },
+]
+
+# Mots-clés qui indiquent une RUPTURE de stock (en minuscules, sans accents
+# gérés dans le code). Liste volontairement large car chaque site a son
+# propre wording.
+OUT_OF_STOCK_KEYWORDS = [
+    "rupture de stock",
+    "indisponible",
+    "actuellement indisponible",
+    "non disponible",
+    "épuisé",
+    "epuise",
+    "hors stock",
+    "en réapprovisionnement",
+    "produit épuisé",
+    "temporairement indisponible",
+    "sold out",
+    "out of stock",
+    "unavailable",
+    "notify me when available",
+    "prévenez-moi",
+    "être alerté",
+    "me prévenir",
+]
+
+# Mots-clés qui indiquent une disponibilité (bouton actif, etc.)
+IN_STOCK_KEYWORDS = [
+    "ajouter au panier",
+    "acheter maintenant",
+    "en stock",
+    "add to cart",
+    "buy now",
+    "livraison offerte",
+    "disponible en ligne",
+]
+Ajout du bot de surveillance
