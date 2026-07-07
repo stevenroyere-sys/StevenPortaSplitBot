@@ -1,84 +1,81 @@
 # Alerte stock Midea Portasplit / Portasplit Cool
 
 Vérifie automatiquement la disponibilité du climatiseur **Midea PortaSplit**
-et **PortaSplit Cool** sur plusieurs sites marchands français, et envoie une
-notification Telegram (et email, en option) dès qu'un modèle repasse en
-stock.
+sur plusieurs sites marchands français, et envoie une notification Telegram
+(et email, en option) dès qu'un modèle repasse en stock.
+
+## Architecture
+
+- `config.py` : liste des couples (produit, marchand) à surveiller, avec pour
+  chacun une `"method"` :
+  - `"requests"` : simple requête HTTP (rapide, utilisé pour les sites qui
+    ne bloquent pas ce type d'accès : Castorama, Rakuten, Amazon, Optimea)
+  - `"playwright"` : navigateur headless (plus lent, utilisé pour les sites
+    qui bloquent les requêtes simples : Boulanger, Darty, ManoMano,
+    Leroy Merlin, Fnac, Joybuy, Auchan)
+- `checker.py` : récupère chaque page selon sa méthode, détecte le statut par
+  mots-clés, notifie en cas de passage en stock, sauvegarde l'état dans
+  `state.json`
+- `notifier.py` : envoi Telegram + email optionnel
+- `.github/workflows/check-stock.yml` : exécute `checker.py` toutes les 5
+  minutes (minimum réellement supporté par GitHub Actions)
 
 ## 1. Récupérer ton `chat_id` Telegram
 
-1. Ouvre une conversation avec ton bot sur Telegram et envoie-lui n'importe
-   quel message (ex : "salut").
-2. Ouvre cette URL dans un navigateur (remplace le token si besoin) :
-   `https://api.telegram.org/bot<TON_TOKEN>/getUpdates`
-3. Dans le JSON retourné, note la valeur `"chat":{"id": ...}` — c'est ton
-   `TELEGRAM_CHAT_ID`.
+1. Envoie n'importe quel message à ton bot sur Telegram.
+2. Ouvre `https://api.telegram.org/bot<TON_TOKEN>/getUpdates` dans un
+   navigateur.
+3. Note la valeur `"chat":{"id": ...}` — c'est ton `TELEGRAM_CHAT_ID`.
 
-## 2. Configurer les secrets GitHub
+## 2. Secrets GitHub
 
-Dans le repo GitHub → **Settings → Secrets and variables → Actions → New
-repository secret**, ajoute :
+`Settings → Secrets and variables → Actions → New repository secret` :
 
-| Nom              | Obligatoire | Valeur                                   |
-|------------------|-------------|-------------------------------------------|
-| `TELEGRAM_TOKEN`   | oui | le token de ton bot (celui donné par @BotFather) |
+| Nom                | Obligatoire | Valeur |
+|--------------------|-------------|--------|
+| `TELEGRAM_TOKEN`   | oui | token de ton bot |
 | `TELEGRAM_CHAT_ID` | oui | récupéré à l'étape 1 |
 | `SMTP_SERVER`      | non | ex: `smtp.gmail.com` |
 | `SMTP_PORT`        | non | ex: `587` |
 | `SMTP_USER`        | non | ton adresse email |
-| `SMTP_PASS`        | non | mot de passe d'application (pas ton mot de passe normal) |
+| `SMTP_PASS`        | non | mot de passe d'application |
 | `EMAIL_TO`         | non | adresse qui reçoit les alertes |
 
-Si tu ne renseignes pas les variables SMTP, seul Telegram sera utilisé
-(l'email est ignoré silencieusement).
+Ne mets jamais le token en clair dans le code — uniquement dans les Secrets.
 
-⚠️ Ne mets JAMAIS le token en clair dans le code ou dans un commit — utilise
-uniquement les Secrets ci-dessus.
+## 3. URLs produits
 
-## 3. Renseigner les URLs produits
+Toutes les URLs de `config.py` sont déjà renseignées avec de vraies fiches
+produit. Si un marchand change son URL produit avec le temps, remplace-la
+directement dans `config.py`.
 
-Ouvre `config.py` et remplace chaque URL marquée `TODO` par l'URL exacte de
-la fiche produit (pas une page de recherche). Pour la trouver :
-cherche "Midea PortaSplit" (ou "PortaSplit Cool") sur le site du marchand,
-ouvre la fiche produit, copie l'URL.
+## 4. Déployer sur GitHub
 
-## 4. Pousser sur GitHub
+Remplace chaque fichier concerné directement dans l'éditeur GitHub (crayon
+✏️ → tout sélectionner → coller → Commit changes), en respectant bien le
+chemin `.github/workflows/check-stock.yml` pour le workflow.
 
-```bash
-git add .
-git commit -m "Ajout du bot de surveillance de stock Portasplit"
-git push
-```
+**Ne remplace pas `state.json` manuellement** une fois le bot en service :
+il est mis à jour automatiquement par le workflow et contient le dernier
+statut connu de chaque site, ce qui évite les notifications en double.
 
-Le workflow `.github/workflows/check-stock.yml` tourne ensuite automatiquement
-toutes les 10 minutes. Tu peux aussi le lancer manuellement depuis l'onglet
-**Actions** du repo (bouton "Run workflow").
+Le workflow se lance ensuite automatiquement toutes les 5 minutes, ou
+manuellement depuis l'onglet **Actions** → **Run workflow**.
 
-## 5. Tester en local (optionnel)
+## Limites importantes
 
-```bash
-pip install -r requirements.txt
-export TELEGRAM_TOKEN="123:abc"
-export TELEGRAM_CHAT_ID="123456789"
-python checker.py
-```
-
-## Limites importantes à connaître
-
-- **Détection par mots-clés, pas par sélecteur CSS précis.** C'est plus
-  robuste aux changements de mise en page, mais ça peut donner de faux
-  positifs/négatifs sur certains sites mal formulés. Si un site donné pose
-  problème, ouvre `checker.py` et affine `detect_stock_status` pour ce cas.
-- **Protections anti-bot.** Darty, Auchan, Leroy Merlin, Cdiscount et
-  d'autres utilisent parfois des protections (Datadome, Akamai, Cloudflare)
-  qui peuvent bloquer une simple requête `requests` (page vide, mur de
-  vérification, code 403). Si `checker.py` affiche souvent
-  "statut = unknown" ou "possible blocage anti-bot" pour un site, il faudra
-  passer par un navigateur headless (Playwright) pour ce site précis — ça
-  change l'architecture (plus lent, plus lourd en CI) donc dis-moi si tu
-  veux que je l'ajoute pour des sites spécifiques une fois que tu as vu
-  lesquels posent problème.
+- **Détection par mots-clés**, pas par sélecteur CSS précis : plus robuste
+  aux changements de mise en page, mais peut donner de faux
+  positifs/négatifs. Si un site pose problème, ajuste
+  `OUT_OF_STOCK_KEYWORDS` / `IN_STOCK_KEYWORDS` dans `config.py`.
+- **Playwright contourne les protections basiques** mais pas les protections
+  avancées type Datadome/Akamai (souvent utilisées par le groupe
+  Fnac-Darty) : ces sites peuvent rester bloqués même avec un navigateur
+  headless, car les IP des serveurs GitHub sont elles-mêmes parfois
+  repérées.
 - **GitHub Actions cron n'est pas garanti à la minute près** : en cas de
-  forte charge, l'exécution peut être retardée de quelques minutes.
-- Le fichier `state.json` est recommité automatiquement par le workflow pour
-  se souvenir du dernier statut connu et ne pas re-notifier à chaque run.
+  forte charge, l'exécution peut être retardée de quelques minutes. Le
+  minimum réel est 5 minutes ; en dessous, GitHub ignore ou retarde
+  fortement l'exécution.
+- Chaque run avec Playwright prend 2-3 minutes (installation + navigation
+  sur plusieurs sites), contre quelques secondes en requests simple.
