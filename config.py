@@ -85,7 +85,7 @@ PRODUCTS = [
         "product": "Portasplit",
         "site": "Optimea",
         "url": "https://www.optimea.fr/product/climatiseur-split-mobile-midea/",
-        "method": "requests",
+        "method": "playwright",
     },
 ]
 
