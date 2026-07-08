@@ -7,12 +7,14 @@ et envoie une notification Telegram/email dès qu'un produit passe de
 Usage :
     python checker.py
 
-Prévu pour tourner en cron (GitHub Actions) toutes les 5 minutes.
+Toutes les vérifications tournent EN PARALLÈLE (requests + Playwright)
+pour minimiser le temps total d'exécution — chaque site est interrogé une
+seule fois par run, donc paralléliser ne change rien à la charge envoyée
+à chaque marchand, juste au temps total du script.
 """
 
+import asyncio
 import json
-import random
-import time
 import unicodedata
 from pathlib import Path
 
@@ -34,12 +36,6 @@ HEADERS = {
 
 REQUEST_TIMEOUT = 20
 
-# Le navigateur Playwright n'est démarré qu'une seule fois, et seulement
-# si au moins une entrée de PRODUCTS utilise method="playwright". Ça évite
-# de payer le coût du lancement de Chromium si personne n'en a besoin.
-_playwright_browser = None
-_playwright_ctx_manager = None
-
 
 def strip_accents(text: str) -> str:
     return "".join(
@@ -60,7 +56,7 @@ def save_state(state: dict) -> None:
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def fetch_with_requests(url: str) -> str | None:
+def _sync_fetch_with_requests(url: str) -> str | None:
     try:
         resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
     except requests.RequestException as exc:
@@ -74,61 +70,51 @@ def fetch_with_requests(url: str) -> str | None:
     return resp.text
 
 
-def get_playwright_browser():
-    """Lance Chromium une seule fois par exécution du script, réutilisé
-    pour toutes les entrées method="playwright"."""
-    global _playwright_browser, _playwright_ctx_manager
-    if _playwright_browser is None:
-        from playwright.sync_api import sync_playwright
-
-        _playwright_ctx_manager = sync_playwright().start()
-        _playwright_browser = _playwright_ctx_manager.chromium.launch(headless=True)
-    return _playwright_browser
+async def fetch_with_requests(url: str) -> str | None:
+    # requests est bloquant : on le pousse dans un thread pour ne pas geler
+    # les autres vérifications qui tournent en parallèle.
+    return await asyncio.to_thread(_sync_fetch_with_requests, url)
 
 
-def fetch_with_playwright(url: str) -> str | None:
+async def fetch_with_playwright(browser, url: str) -> str | None:
     try:
-        browser = get_playwright_browser()
-        page = browser.new_page(
-            user_agent=HEADERS["User-Agent"],
-            locale="fr-FR",
-        )
+        page = await browser.new_page(user_agent=HEADERS["User-Agent"], locale="fr-FR")
         try:
-            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            await page.goto(url, timeout=30000, wait_until="domcontentloaded")
             # Laisse le temps au JS de charger le prix / bouton panier.
-            page.wait_for_timeout(3000)
-            html = page.content()
+            await page.wait_for_timeout(2500)
+            html = await page.content()
         finally:
-            page.close()
+            await page.close()
         return html
     except Exception as exc:  # noqa: BLE001
         print(f"[checker] Erreur Playwright sur {url}: {exc}")
         return None
 
 
-def close_playwright() -> None:
-    global _playwright_browser, _playwright_ctx_manager
-    if _playwright_browser is not None:
-        _playwright_browser.close()
-    if _playwright_ctx_manager is not None:
-        _playwright_ctx_manager.stop()
-    _playwright_browser = None
-    _playwright_ctx_manager = None
-
-
 def detect_stock_status(html: str) -> str:
     """
     Retourne "in_stock", "out_of_stock" ou "unknown".
 
-    Heuristique volontairement simple : on cherche des mots-clés dans le
-    texte brut de la page. Ce n'est pas infaillible, notamment sur les
-    sites protégés par Datadome/Akamai qui peuvent renvoyer un mur de
-    vérification même via Playwright.
+    Deux passes :
+    1. Détection WooCommerce : classe CSS technique (in-stock/out-of-stock),
+       plus fiable que le texte visible car stable même si le libellé
+       affiché est personnalisé par la boutique.
+    2. Fallback par mots-clés dans le texte visible.
     """
     try:
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html, "html.parser")
+
+        stock_elements = soup.select(".stock, [class*='stock']")
+        for el in stock_elements:
+            classes = " ".join(el.get("class", []))
+            if "out-of-stock" in classes:
+                return "out_of_stock"
+            if "in-stock" in classes:
+                return "in_stock"
+
         for tag in soup(["script", "style", "noscript"]):
             tag.decompose()
         text = soup.get_text(separator=" ")
@@ -148,50 +134,98 @@ def detect_stock_status(html: str) -> str:
     return "unknown"
 
 
+def print_debug_snippet(html: str) -> None:
+    try:
+        from bs4 import BeautifulSoup
+
+        soup_debug = BeautifulSoup(html, "html.parser")
+        for tag in soup_debug(["script", "style", "noscript"]):
+            tag.decompose()
+        snippet = soup_debug.get_text(separator=" ")
+        snippet = " ".join(snippet.split())[:300]
+        print(f"[checker] Extrait de la page (statut inconnu) : {snippet}")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+async def fetch_entry(entry: dict, browser) -> tuple[str, str | None]:
+    url = entry["url"]
+    method = entry.get("method", "requests")
+    if method == "playwright":
+        html = await fetch_with_playwright(browser, url)
+    else:
+        html = await fetch_with_requests(url)
+    return entry["key"], html
+
+
+async def run_checks() -> dict:
+    active_entries = [e for e in PRODUCTS if "TODO" not in e["url"]]
+    for e in PRODUCTS:
+        if "TODO" in e["url"]:
+            print(f"[checker] {e['site']} / {e['product']} : URL non renseignée, on saute.")
+
+    needs_playwright = any(e.get("method") == "playwright" for e in active_entries)
+
+    results: dict[str, str | None] = {}
+
+    if needs_playwright:
+        from playwright.async_api import async_playwright
+
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch(headless=True)
+            try:
+                tasks = [
+                    fetch_entry(entry, browser if entry.get("method") == "playwright" else None)
+                    for entry in active_entries
+                ]
+                fetched = await asyncio.gather(*tasks)
+            finally:
+                await browser.close()
+    else:
+        tasks = [fetch_entry(entry, None) for entry in active_entries]
+        fetched = await asyncio.gather(*tasks)
+
+    for key, html in fetched:
+        results[key] = html
+
+    return results
+
+
 def main() -> None:
     state = load_state()
     changed = False
-    needs_playwright = any(entry.get("method") == "playwright" for entry in PRODUCTS)
 
-    try:
-        for entry in PRODUCTS:
-            key = entry["key"]
-            product = entry["product"]
-            site = entry["site"]
-            url = entry["url"]
-            method = entry.get("method", "requests")
+    print("[checker] Récupération de toutes les pages en parallèle ...")
+    html_by_key = asyncio.run(run_checks())
 
-            if "TODO" in url:
-                print(f"[checker] {site} / {product} : URL non renseignée, on saute.")
-                continue
+    for entry in PRODUCTS:
+        key = entry["key"]
+        product = entry["product"]
+        site = entry["site"]
+        url = entry["url"]
 
-            print(f"[checker] Vérification {product} chez {site} (méthode: {method}) ...")
+        if key not in html_by_key:
+            continue
 
-            if method == "playwright":
-                html = fetch_with_playwright(url)
-            else:
-                html = fetch_with_requests(url)
+        html = html_by_key[key]
+        status = detect_stock_status(html) if html is not None else "unknown"
 
-            status = detect_stock_status(html) if html is not None else "unknown"
+        if status == "unknown" and html is not None:
+            print(f"[checker] {product} chez {site} : statut inconnu, extrait ci-dessous")
+            print_debug_snippet(html)
 
-            previous = state.get(key, {}).get("status", "unknown")
+        previous = state.get(key, {}).get("status", "unknown")
 
-            if status == "in_stock" and previous != "in_stock":
-                print(f"[checker] 🟢 {product} EN STOCK chez {site} -> notification envoyée.")
-                notify_in_stock(product, site, url)
-            else:
-                print(f"[checker] {product} chez {site} : statut = {status}")
+        if status == "in_stock" and previous != "in_stock":
+            print(f"[checker] 🟢 {product} EN STOCK chez {site} -> notification envoyée.")
+            notify_in_stock(product, site, url)
+        else:
+            print(f"[checker] {product} chez {site} : statut = {status}")
 
-            if state.get(key, {}).get("status") != status:
-                changed = True
+        if state.get(key, {}).get("status") != status:
+            changed = True
 
-            state[key] = {"status": status, "url": url}
-
-            # Pause polie entre deux requêtes pour ne pas cogner les serveurs.
-            time.sleep(random.uniform(1.5, 3.5))
-    finally:
-        if needs_playwright:
-            close_playwright()
+        state[key] = {"status": status, "url": url}
 
     if changed:
         save_state(state)
