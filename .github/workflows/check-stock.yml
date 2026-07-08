@@ -1,5 +1,4 @@
-name: Check Portasplit stock concurrency
-# redeploy
+name: Portasplit stock check
 
 on:
   schedule:
