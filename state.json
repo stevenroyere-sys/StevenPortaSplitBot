@@ -12,7 +12,7 @@
     "url": "https://www.manomano.fr/p/midea-climatiseur-split-mobile-reversible-froid-chaud-3500w12000btu-wifi-deshumidificateur-ventilateur-jusqua-40m2-kit-fenetre-inclus-83810402"
   },
   "portasplit_castorama": {
-    "status": "in_stock",
+    "status": "out_of_stock",
     "url": "https://www.castorama.fr/climatiseur-portasplit-midea-reversible-3500w/8431312260509_CAFR.prd"
   },
   "portasplit_leroymerlin": {
@@ -20,7 +20,7 @@
     "url": "https://www.leroymerlin.fr/produits/climatiseur-split-mobile-reversible-portasplit-midea-par-optimea-93857579.html"
   },
   "portasplit_joybuy": {
-    "status": "unknown",
+    "status": "in_stock",
     "url": "https://www.joybuy.fr/dp/midea-portasplit-climatiseur-réversible-froidchaud-35kw/100003175005531"
   },
   "portasplit_rakuten": {
@@ -36,7 +36,7 @@
     "url": "https://www.auchan.fr/optimea-clim-reversible-midea-climatiseur-split-mobile/pr-10b80596-1b4d-4ebb-aeba-ad08f0943013"
   },
   "portasplit_amazon": {
-    "status": "unknown",
+    "status": "out_of_stock",
     "url": "https://www.amazon.fr/Climatiseur-Climatisation-rafra%C3%AEchisseur-d%C3%A9shumidificateur-ventilateur/dp/B0CY2YW8BT"
   },
   "portasplit_optimea": {
